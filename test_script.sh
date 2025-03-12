@@ -2,7 +2,7 @@
 
 set -e  # Exit on error
 
-echo "Building module and user utility..."
+echo "Building kernel module..."
 make clean && make
 
 echo "Loading kernel module..."
@@ -10,20 +10,13 @@ sudo insmod netlink_module.ko
 sleep 1
 
 echo "Checking kernel logs..."
-dmesg | tail -n 10
-
-echo "Listing network interfaces using user utility..."
-./netlink_user
-
-echo "Querying specific interface (eth0)..."
-./netlink_user eth0 || echo "Interface eth0 not found"
-
+sudo dmesg | tail -n 10
 
 echo "Unloading kernel module..."
 sudo rmmod netlink_module
 sleep 1
 
 echo "Checking kernel logs after unloading..."
-dmesg | tail -n 10
+sudo dmesg | tail -n 10
 
 echo "Test completed!"
