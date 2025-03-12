@@ -1,0 +1,14 @@
+What is Netlink?:
+A communication mechanism between kernel and user space, using sockets (like network sockets but for local use).
+ It’s flexible and replaces older methods like ioctl.
+
+Why Use It?:
+Ideal for network-related tasks (e.g., querying interfaces), as it’s built into the Linux kernel and supports structured data 
+exchange.
+
+How Does It Work?:
+User space creates a socket with socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE).
+Kernel and user space exchange messages, each with a header (nlmsghdr) and payload (data).
+
+What’s a nlmsghdr?:
+A structure defining a Netlink message: includes length, type, flags, sequence number, and process ID.
