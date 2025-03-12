@@ -45,12 +45,16 @@ __used __section("__versions") =
 	"__stack_chk_fail\0\0\0\0"
 	"\x20\x00\x00\x00\xd1\xae\x44\xd6"
 	"netlink_kernel_release\0\0"
-	"\x10\x00\x00\x00\xda\xfa\x66\x91"
-	"strncpy\0"
+	"\x10\x00\x00\x00\x94\xb6\x16\xa9"
+	"strnlen\0"
+	"\x10\x00\x00\x00\x39\xe6\x64\xdd"
+	"strscpy\0"
 	"\x14\x00\x00\x00\x61\xea\xcd\xbd"
 	"__nlmsg_put\0"
 	"\x18\x00\x00\x00\x8a\x91\xf5\xa9"
 	"netlink_unicast\0"
+	"\x18\x00\x00\x00\x8c\x89\xd4\xcb"
+	"fortify_panic\0\0\0"
 	"\x14\x00\x00\x00\x8f\x06\xe3\xdc"
 	"__alloc_skb\0"
 	"\x1c\x00\x00\x00\x0f\x82\x16\xfa"
@@ -66,4 +70,4 @@ __used __section("__versions") =
 MODULE_INFO(depends, "");
 
 
-MODULE_INFO(srcversion, "FDAACE7545739D0DCBFAD45");
+MODULE_INFO(srcversion, "9A1E4BF909E4C9725589C67");

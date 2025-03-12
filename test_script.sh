@@ -2,7 +2,7 @@
 
 set -e  # Exit on error
 
-echo "Building kernel module..."
+echo "Building kernel module and user utility..."
 make clean && make
 
 echo "Loading kernel module..."
@@ -11,6 +11,12 @@ sleep 1
 
 echo "Checking kernel logs..."
 sudo dmesg | tail -n 10
+
+echo "Listing all L2 interfaces..."
+./netlink_user
+
+echo "Querying specific interface (enp0s1)..."
+./netlink_user enp0s1 || echo "Interface enp0s1 not found"
 
 echo "Unloading kernel module..."
 sudo rmmod netlink_module

@@ -3,9 +3,10 @@
 #include <linux/netlink.h>
 #include <net/netlink.h>
 #include <linux/if.h>
-#include <linux/if_arp.h>  // Added for ARPHRD_ETHER
+#include <linux/if_arp.h>
 #include <net/sock.h>
 #include <linux/netdevice.h>
+#include <linux/string.h>  // Added for strscpy
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Yegor Brusnyak");
@@ -25,63 +26,69 @@ struct interface_info {
 };
 
 // Send a single interface info to user space
-static int send_interface(struct sk_buff *skb_out, int pid, struct net_device *dev) {
+static int send_interface(struct sk_buff *skb_out, int pid, struct net_device *dev, int seq) {
     struct nlmsghdr *nlh;
     struct interface_info info;
     int msg_size = sizeof(struct interface_info);
+    int res;
 
     memset(&info, 0, sizeof(info));
-    strncpy(info.name, dev->name, IFNAMSIZ);
+    strscpy(info.name, dev->name, IFNAMSIZ);
     info.index = dev->ifindex;
-    memcpy(info.addr, dev->dev_addr, 6);  // Copy MAC address
+    memcpy(info.addr, dev->dev_addr, 6);
 
-    nlh = nlmsg_put(skb_out, 0, 0, NLMSG_DONE, msg_size, 0);
+    nlh = nlmsg_put(skb_out, 0, seq, NLMSG_DONE, msg_size, 0);
     if (!nlh) {
-        printk(KERN_ERR "Failed to create nlmsg\n");
+        printk(KERN_ERR "Failed to create nlmsg for %s\n", dev->name);
         return -ENOMEM;
     }
     memcpy(nlmsg_data(nlh), &info, msg_size);
 
-    return nlmsg_unicast(nl_sk, skb_out, pid);
+    res = nlmsg_unicast(nl_sk, skb_out, pid);
+    if (res < 0) {
+        printk(KERN_ERR "Failed to send %s to user: %d\n", dev->name, res);
+        return res;
+    }
+    printk(KERN_INFO "Sent %s to user\n", dev->name);
+    return 0;
 }
 
 // Handle incoming messages from user space
 static void nl_recv_msg(struct sk_buff *skb) {
     struct nlmsghdr *nlh = (struct nlmsghdr *)skb->data;
-    int pid = nlh->nlmsg_pid;  // Sender's PID
+    int pid = nlh->nlmsg_pid;
     struct sk_buff *skb_out;
     struct net_device *dev;
     char *user_msg = (char *)nlmsg_data(nlh);
+    int seq = 0;
 
     printk(KERN_INFO "Received from user: %s\n", user_msg);
 
     if (nlh->nlmsg_type == MSG_LIST_ALL) {
-        // List all L2 interfaces
         for_each_netdev(&init_net, dev) {
-            if (dev->type == ARPHRD_ETHER) {  // Only Ethernet (L2) interfaces
+            if (dev->type == ARPHRD_ETHER) {
                 skb_out = nlmsg_new(sizeof(struct interface_info), 0);
                 if (!skb_out) {
                     printk(KERN_ERR "Failed to allocate skb\n");
                     continue;
                 }
-                if (send_interface(skb_out, pid, dev) < 0) {
+                if (send_interface(skb_out, pid, dev, seq++) < 0) {
                     printk(KERN_ERR "Failed to send interface %s\n", dev->name);
                     kfree_skb(skb_out);
                 }
             }
         }
     } else if (nlh->nlmsg_type == MSG_GET_ONE) {
-        // Get specific interface by name
         dev = dev_get_by_name(&init_net, user_msg);
         if (dev) {
             if (dev->type == ARPHRD_ETHER) {
                 skb_out = nlmsg_new(sizeof(struct interface_info), 0);
-                if (skb_out && send_interface(skb_out, pid, dev) < 0) {
+                if (skb_out && send_interface(skb_out, pid, dev, seq) < 0) {
                     printk(KERN_ERR "Failed to send interface %s\n", dev->name);
                     kfree_skb(skb_out);
                 }
             }
-            dev_put(dev);  // Release device reference
+            dev_put(dev);
         } else {
             printk(KERN_INFO "Interface %s not found\n", user_msg);
         }
