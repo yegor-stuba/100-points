@@ -62,24 +62,33 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
+    iov.iov_base = nlh;
+    iov.iov_len = NLMSG_SPACE(MAX_PAYLOAD);
+    msg.msg_iov = &iov;
+    msg.msg_iovlen = 1;
+
     printf("+------------------+----------------+\n");
     printf("| Interface Name   | MAC Address    |\n");
     printf("+------------------+----------------+\n");
-
     while (1) {
-        struct interface_info *info;
         ssize_t recv_len = recvmsg(sock_fd, &msg, 0);
-        if (recv_len < 0) {
-            perror("Receive failed");
+        if (recv_len <= 0) {
+            if (recv_len < 0) {
+                perror("Receive failed");
+            }
             break;
         }
-        if (recv_len == 0 || nlh->nlmsg_type == NLMSG_DONE) {
+
+        struct nlmsghdr *recv_nlh = (struct nlmsghdr *)nlh;
+        if (NLMSG_OK(recv_nlh, recv_len)) {
+            struct interface_info *info = (struct interface_info *)NLMSG_DATA(recv_nlh);
+            printf("| %-16s | %02x:%02x:%02x:%02x:%02x:%02x |\n",
+                   info->name, info->addr[0], info->addr[1], info->addr[2],
+                   info->addr[3], info->addr[4], info->addr[5]);
+        }
+        if (recv_nlh->nlmsg_type == NLMSG_DONE) {
             break;
         }
-        info = (struct interface_info *)NLMSG_DATA(nlh);
-        printf("| %-16s | %02x:%02x:%02x:%02x:%02x:%02x |\n",
-               info->name, info->addr[0], info->addr[1], info->addr[2],
-               info->addr[3], info->addr[4], info->addr[5]);
     }
     printf("+------------------+----------------+\n");
 
