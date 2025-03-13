@@ -91,6 +91,16 @@ static void nl_recv_msg(struct sk_buff *skb) {
             dev_put(dev);
         } else {
             printk(KERN_INFO "Interface %s not found\n", user_msg);
+            // Send an empty NLMSG_DONE to signal no data
+            skb_out = nlmsg_new(0, 0);
+            if (skb_out) {
+                nlh = nlmsg_put(skb_out, 0, seq, NLMSG_DONE, 0, 0);
+                if (nlh) {
+                    nlmsg_unicast(nl_sk, skb_out, pid);
+                } else {
+                    kfree_skb(skb_out);
+                }
+            }
         }
     }
 }

@@ -16,7 +16,10 @@ echo "Listing all L2 interfaces..."
 ./netlink_user
 
 echo "Querying specific interface (enp0s1)..."
-./netlink_user enp0s1 || echo "Interface enp0s1 not found"
+./netlink_user enp0s1
+
+echo "Querying nonexistent interface (fakes1)..."
+./netlink_user fakes1
 
 echo "Unloading kernel module..."
 sudo rmmod netlink_module
