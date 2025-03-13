@@ -80,12 +80,18 @@ int main(int argc, char *argv[]) {
         }
 
         struct nlmsghdr *recv_nlh = (struct nlmsghdr *)nlh;
-        if (NLMSG_OK(recv_nlh, recv_len)) {
+        if (!NLMSG_OK(recv_nlh, recv_len)) {
+            printf("Invalid message received\n");
+            break;
+        }
+
+        if (recv_len >= NLMSG_SPACE(sizeof(struct interface_info))) {
             struct interface_info *info = (struct interface_info *)NLMSG_DATA(recv_nlh);
             printf("| %-16s | %02x:%02x:%02x:%02x:%02x:%02x |\n",
                    info->name, info->addr[0], info->addr[1], info->addr[2],
                    info->addr[3], info->addr[4], info->addr[5]);
         }
+
         if (recv_nlh->nlmsg_type == NLMSG_DONE) {
             break;
         }

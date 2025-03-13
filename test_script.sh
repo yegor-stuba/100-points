@@ -5,6 +5,9 @@ set -e  # Exit on error
 echo "Building kernel module and user utility..."
 make clean && make
 
+echo "Unloading kernel module if already loaded..."
+sudo rmmod netlink_module 2>/dev/null || true
+
 echo "Loading kernel module..."
 sudo insmod netlink_module.ko
 sleep 1
