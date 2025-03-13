@@ -15,14 +15,21 @@ sleep 1
 echo "Checking kernel logs..."
 sudo dmesg | tail -n 10
 
-echo "Listing all L2 interfaces..."
+echo "Listing all L2 interfaces with netlink_user..."
 ./netlink_user
 
-echo "Querying specific interface (enp0s1)..."
+echo "Querying specific interface (enp0s1) with netlink_user..."
 ./netlink_user enp0s1
 
-echo "Querying nonexistent interface (fakes1)..."
+echo "Querying nonexistent interface (fakes1) with netlink_user..."
 ./netlink_user fakes1
+
+echo "Comparing with ip link output..."
+ip link | grep -E "link/ether" | while read -r line; do
+    iface=$(echo "$line" | awk '{print $2}' | sed 's/:$//')
+    mac=$(echo "$line" | awk '{print $3}')
+    echo "ip link: $iface - $mac"
+done
 
 echo "Unloading kernel module..."
 sudo rmmod netlink_module
